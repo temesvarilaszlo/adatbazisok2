@@ -1,0 +1,89 @@
+/*
+ Fontos információ !!!!!
+ Ha véletlenül beragad egy session-ünk, mert például végtelen ciklust írunk a programba,
+ akkor az alábbi módon tudjuk azt kilőni.
+ Lépjünk be még egyszer az adatbázisba, ezáltal egy új session (kapcsolat) jön létre.
+ Futtasuk a következő procedúrát:
+ set serveroutput on
+ execute list_my_sessions;
+ Majd a listából a törölni kívánt sessiont törölhetjük az alábbi procedúrával:
+ execute kill_session(SID, Serial#);
+*/
+
+-- kötelező
+
+CREATE OR REPLACE PROCEDURE newest_table(p_user VARCHAR2) IS 
+    p_date date;
+    p_bytes int;
+    p_table varchar(100);
+    
+begin
+
+    select max(created) into p_date
+    from dba_objects
+    where owner = upper(p_user);
+    
+    select object_name into p_table
+    from dba_objects
+    where created = p_date
+    and owner = upper(p_user);
+    
+    select bytes into p_bytes
+    from dba_segments
+    where owner = upper(p_user)
+    and segment_type = 'TABLE'
+    and segment_name = p_table;
+    
+    dbms_output.put_line('Table_name: ' || p_table || 'Size: ' || p_bytes || 'bytes Created: ' || to_char(p_date, 'yyyy.mm.dd.hh24:mi'));
+end;
+/
+
+SET SERVEROUTPUT ON
+EXECUTE newest_table('nikovits');
+EXECUTE check_plsql('newest_table(''nikovits'')');
+
+select text from user_source
+where name = 'NEWEST_TABLE'
+order by line;
+
+create table gyak02 as 
+select text from user_source
+where name = 'NEWEST_TABLE'
+order by line;
+
+select * from gyak02;
+
+-- 1
+
+(select file_name, bytes from dba_data_files
+union
+select file_name, bytes from dba_temp_files)
+order by bytes desc;
+
+-- 2
+
+select ts.tablespace_name, count(*) fajlok_szama, sum(fds.bytes) osszmeret 
+from dba_tablespaces ts
+join
+(select file_name, bytes, tablespace_name from dba_data_files
+union
+select file_name, bytes, tablespace_name from dba_temp_files) fds
+on ts.tablespace_name = fds.tablespace_name
+group by ts.tablespace_name;
+
+-- 3
+
+select block_size from dba_tablespaces
+where tablespace_name = 'USERS';
+
+-- 5
+
+select owner, segment_name, extents from dba_segments
+where segment_type = 'TABLE' 
+and bytes = (select max(bytes) from dba_segments where segment_type = 'TABLE');
+
+
+
+select * from dba_extents;
+
+select * from dba_free_space;

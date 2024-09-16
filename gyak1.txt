@@ -1,0 +1,111 @@
+CREATE table "proba"(o integer);
+
+select * from dba_tables where table_name = 'PROBA';
+
+create table gyak01 as
+select table_name from dba_tables where table_name like '%B%' and owner = 'NIKOVITS';
+
+select * from gyak01;
+
+-- dba objects
+
+-- 1
+
+select owner, object_name, object_type from dba_objects
+where (object_name = 'DBA_TABLES' 
+    and object_type = 'VIEW')
+    or (object_name = 'DUAL' 
+    and object_type = 'TABLE');
+    
+-- 2
+select * from dba_synonyms
+where synonym_name = 'DBA_TABLES'
+or synonym_name = 'DUAL';
+
+-- 3
+select object_type from dba_objects
+where owner = 'ORAUSER';
+
+-- 4
+
+select COUNT(distinct object_type) darab from dba_objects;
+
+-- 5
+
+select distinct object_type from dba_objects;
+
+-- 10
+
+select distinct object_type from dba_objects where data_object_id is null;
+
+-- dba_tab_columns
+
+select count(*) from user_tab_columns;
+
+-- 13
+
+select count(*) darab from dba_tab_columns where owner = 'NIKOVITS' and table_name = 'EMP';
+
+-- 14
+
+select data_type from dba_tab_columns where owner = 'NIKOVITS' and table_name = 'EMP' and column_id = 6;
+
+-- 15
+
+select owner, table_name from dba_tab_columns where owner like 'Z%';
+
+-- 18
+
+CREATE OR REPLACE PROCEDURE table_print(p_kar VARCHAR2) IS 
+begin
+    for rec in (select owner, table_name from dba_tables where table_name like upper(p_kar) || '%') loop
+        dbms_output.put_line(rec.table_name || '-' || rec.owner);
+    end loop;
+end;
+/
+
+SET SERVEROUTPUT ON
+EXECUTE table_print('Z');
+
+
+
+CREATE TABLE test1(col1 INTEGER PRIMARY KEY, col2 VARCHAR2(20));
+
+CREATE SEQUENCE seq1 
+MINVALUE 1 MAXVALUE 100 INCREMENT BY 5 START WITH 50 CYCLE;
+
+CREATE OR REPLACE TRIGGER test1_bir -- before insert row
+BEFORE INSERT ON test1 
+FOR EACH ROW 
+WHEN (new.col1 is null) 
+BEGIN
+  :new.col1 := seq1.nextval;
+END;
+
+/
+BEGIN
+ FOR i IN 1..14 LOOP 
+  INSERT INTO test1 VALUES(null, 'trigger'||to_char(i,'FM09'));
+ END LOOP;
+ INSERT INTO test1 VALUES(seq1.currval + 1, 'sequence + 1'); 
+ COMMIT;
+END;
+/
+
+SELECT * FROM test1 ORDER BY col2;
+
+select * from user_sequences;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

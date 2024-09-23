@@ -1,0 +1,74 @@
+-- 1
+
+select blocks from dba_segments
+where owner = 'NIKOVITS'
+and segment_name = 'CIKK'
+and segment_type = 'TABLE';
+
+-- 2
+
+select dbms_rowid.rowid_object(rowid), 
+    dbms_rowid.rowid_block_number(rowid), 
+    dbms_rowid.rowid_row_number(rowid),
+    dbms_rowid.rowid_relative_fno(rowid), 
+    rowid,
+    c.*
+from nikovits.cikk c;
+
+-- meg kell számolni hány különböző blokk van
+select count(distinct dbms_rowid.rowid_block_number(rowid)) from nikovits.cikk;
+
+
+-- 3
+
+select dbms_rowid.rowid_relative_fno(rowid) file_id,
+    dbms_rowid.rowid_block_number(rowid) block_id,
+    count(*)
+from nikovits.cikk
+group by dbms_rowid.rowid_relative_fno(rowid),
+    dbms_rowid.rowid_block_number(rowid);
+    
+-- 5
+
+select * from dba_extents
+where owner = 'NIKOVITS'
+and segment_name = 'TABLA_123'
+and segment_type = 'TABLE';
+
+select dbms_rowid.rowid_relative_fno(rowid) file_id,
+    dbms_rowid.rowid_block_number(rowid) block_id,
+    count(*)
+from nikovits.tabla_123
+group by dbms_rowid.rowid_relative_fno(rowid),
+    dbms_rowid.rowid_block_number(rowid);
+
+CREATE OR REPLACE PROCEDURE num_of_rows IS 
+    v_count int;
+begin
+    for rec in (select file_id, block_id, blocks from dba_extents where owner = 'NIKOVITS' and segment_name = 'TABLA_123' and segment_type = 'TABLE') loop
+        
+        for i in rec.block_id..rec.block_id + rec.blocks - 1 loop
+            select count(*) into v_count
+            from nikovits.tabla_123
+            where dbms_rowid.rowid_relative_fno(rowid) = rec.file_id 
+            and dbms_rowid.rowid_block_number(rowid) = i;
+            
+            dbms_output.put_line(rec.file_id || ';' || i || '->' || v_count || ';');
+        end loop;
+        
+    end loop;
+    
+end;
+/
+
+SET SERVEROUTPUT ON
+EXECUTE num_of_rows();
+
+
+EXECUTE check_plsql('num_of_rows()');
+
+-- kötelező
+
+create table gyak03 as SELECT text FROM user_source WHERE name='NUM_OF_ROWS' ORDER BY line;
+select * from gyak03;
+

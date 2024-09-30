@@ -1,0 +1,85 @@
+create table emp as select * from nikovits.emp;
+
+select * from emp;
+
+CREATE UNIQUE INDEX  emp1 ON emp (ename);
+CREATE INDEX         emp2 ON emp (job, sal DESC);
+CREATE INDEX         emp3 ON emp (job, sal) REVERSE;
+CREATE INDEX         emp4 ON emp (deptno, job, sal) COMPRESS 2;
+CREATE BITMAP INDEX  emp5 ON emp (mgr);          
+CREATE INDEX         emp6 ON emp (SUBSTR(ename, 2, 2), job);
+
+
+select * from user_indexes;
+select * from user_ind_columns;
+select * from user_ind_expressions;
+
+
+CREATE TABLE cikk_iot
+  ( ckod integer,
+    cnev varchar2(20),
+    szin varchar2(15),
+    suly float,
+       CONSTRAINT cikk_iot_pk PRIMARY KEY (ckod)  )
+ORGANIZATION INDEX
+PCTTHRESHOLD 20 INCLUDING cnev
+OVERFLOW TABLESPACE users;
+
+INSERT INTO cikk_iot SELECT * FROM nikovits.cikk;
+COMMIT;
+
+-- Egy másik index szervezett tábla túlcsordulási rész nélkül
+CREATE TABLE cikk_iot2
+  ( ckod integer,
+    cnev varchar2(20),
+    szin varchar2(15),
+    suly float,
+       CONSTRAINT cikk_iot2_pk PRIMARY KEY (ckod)  )
+ORGANIZATION INDEX;
+INSERT INTO cikk_iot2 SELECT * FROM nikovits.cikk;
+COMMIT;
+
+
+select * from cikk_iot2;
+select * from user_tables;
+select * from user_objects;
+select * from user_segments;
+select * from user_indexes;
+select * from user_ind_columns;
+
+
+-- 6. (kötelező)
+select * from dba_indexes where owner = 'NIKOVITS';
+select * from dba_segments where owner = 'NIKOVITS';
+
+CREATE OR REPLACE PROCEDURE list_indexes(p_owner VARCHAR2, p_table VARCHAR2) IS
+v_size int;
+v_name varchar(100);
+begin
+
+    for rec in (select * from dba_indexes where table_owner = upper(p_owner) and table_name = upper(p_table) order by index_name) loop
+        select bytes into v_size
+        from dba_segments 
+        where segment_name = rec.index_name
+        and owner = rec.owner
+        and segment_type = 'INDEX';
+        dbms_output.put_line(rec.index_name || ': ' || v_size);
+        
+    end loop;
+
+end;
+/
+
+SET SERVEROUTPUT ON
+EXECUTE list_indexes('nikovits', 'customers');
+
+EXECUTE check_plsql('list_indexes(''nikovits'', ''customers'')');
+
+create table gyak04 as select text from user_source where name = 'LIST_INDEXES' ORDER BY line;
+
+select * from gyak04;
+
+select * from user_tables;
+
+
+

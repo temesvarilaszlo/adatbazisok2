@@ -1,0 +1,56 @@
+select distinct onev from osztaly natural join dolgozo
+where fizetes >= (select also from fiz_kategoria where kategoria = 1)
+and fizetes <= (select felso from fiz_kategoria where kategoria = 1);
+
+RESEARCH
+MARKETING
+SALES
+
+
+explain plan set statement_id='ut2' for
+select distinct onev from osztaly natural join dolgozo
+where fizetes >= (select also from fiz_kategoria where kategoria = 1)
+and fizetes <= (select felso from fiz_kategoria where kategoria = 1);
+
+select plan_table_output from table(dbms_xplan.display('plan_table', 'ut2', 'all'));
+
+| Id  | Operation            | Name          | Rows  | Bytes | Cost (%CPU)| Time     |
+--------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT     |               |     1 |    20 |    13   (8)| 00:00:01 |
+|   1 |  HASH UNIQUE         |               |     1 |    20 |    13   (8)| 00:00:01 |
+|*  2 |   HASH JOIN          |               |     1 |    20 |     6   (0)| 00:00:01 |
+|*  3 |    TABLE ACCESS FULL | DOLGOZO       |     1 |     7 |     3   (0)| 00:00:01 |
+|*  4 |     TABLE ACCESS FULL| FIZ_KATEGORIA |     1 |     7 |     3   (0)| 00:00:01 |
+|*  5 |     TABLE ACCESS FULL| FIZ_KATEGORIA |     1 |     7 |     3   (0)| 00:00:01 |
+|   6 |    TABLE ACCESS FULL | OSZTALY       |     5 |    65 |     3   (0)| 00:00:01 |
+--------------------------------------------------------------------------------------
+
+
+create index fiz_kategoria_index on fiz_kategoria(kategoria);
+
+create index dolgozo_fiz_index on dolgozo(fizetes);
+
+create index osztaly_oazon_index on osztaly(oazon);
+
+explain plan set statement_id='ut3' for
+select distinct onev from osztaly natural join dolgozo
+where fizetes >= (select also from fiz_kategoria where kategoria = 1)
+and fizetes <= (select felso from fiz_kategoria where kategoria = 1);
+
+select plan_table_output from table(dbms_xplan.display('plan_table', 'ut3', 'all'));
+
+| Id  | Operation                                | Name                | Rows  | Bytes | Cost (%CPU)| Time     |
+----------------------------------------------------------------------------------------------------------------
+|   0 | SELECT STATEMENT                         |                     |     1 |    20 |     4  (25)| 00:00:01 |
+|   1 |  HASH UNIQUE                             |                     |     1 |    20 |     4  (25)| 00:00:01 |
+|   2 |   NESTED LOOPS                           |                     |     1 |    20 |     3   (0)| 00:00:01 |
+|   3 |    NESTED LOOPS                          |                     |     1 |    20 |     3   (0)| 00:00:01 |
+|   4 |     TABLE ACCESS BY INDEX ROWID BATCHED  | DOLGOZO             |     1 |     7 |     2   (0)| 00:00:01 |
+|*  5 |      INDEX RANGE SCAN                    | DOLGOZO_FIZ_INDEX   |     1 |       |     1   (0)| 00:00:01 |
+|   6 |       TABLE ACCESS BY INDEX ROWID BATCHED| FIZ_KATEGORIA       |     1 |     7 |     2   (0)| 00:00:01 |
+|*  7 |        INDEX RANGE SCAN                  | FIZ_KATEGORIA_INDEX |     1 |       |     1   (0)| 00:00:01 |
+|   8 |       TABLE ACCESS BY INDEX ROWID BATCHED| FIZ_KATEGORIA       |     1 |     7 |     2   (0)| 00:00:01 |
+|*  9 |        INDEX RANGE SCAN                  | FIZ_KATEGORIA_INDEX |     1 |       |     1   (0)| 00:00:01 |
+|* 10 |     INDEX RANGE SCAN                     | OSZTALY_OAZON_INDEX |     1 |       |     0   (0)| 00:00:01 |
+|  11 |    TABLE ACCESS BY INDEX ROWID           | OSZTALY             |     1 |    13 |     1   (0)| 00:00:01 |
+----------------------------------------------------------------------------------------------------------------

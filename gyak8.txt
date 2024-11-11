@@ -1,0 +1,130 @@
+select * from nikovits.cikk;
+select * from nikovits.szallito;
+select * from nikovits.projekt;
+select * from nikovits.szallit;
+
+-- kötelező
+
+explain plan set statement_id='szallit' for
+select /*+ no_index(sz) */ sum(mennyiseg) from nikovits.szallit sz
+where szkod = 2 and ckod = 2;
+-- vagy full(sz)
+
+
+select plan_table_output from table(dbms_xplan.display('plan_table','szallit','all'));
+
+
+explain plan set statement_id='szallit2' for
+select /*+ and_equal(sz szt_ckod szt_szkod) */ sum(mennyiseg) from nikovits.szallit sz
+where szkod = 2 and ckod = 2;
+
+
+select plan_table_output from table(dbms_xplan.display('plan_table','szallit2','all'));
+
+-- 2
+-- a
+
+explain plan set statement_id='8.2a' for
+select /*+ LEADING(szt c szo) */ sum(mennyiseg) from nikovits.szallito szo, nikovits.szallit szt, nikovits.cikk c
+where szo.szkod = szt.szkod and szt.ckod = c.ckod
+and telephely = 'Pecs' and szin = 'piros';
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.2a','all'));
+
+-- b
+
+explain plan set statement_id='8.2b' for
+select /*+ ORDERED */ sum(mennyiseg) from nikovits.szallit szt, nikovits.szallito szo, nikovits.cikk c
+where szo.szkod = szt.szkod and szt.ckod = c.ckod
+and telephely = 'Pecs' and szin = 'piros';
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.2b','all'));
+
+-- 3
+-- a
+explain plan set statement_id='8.3a' for
+select /*+ no_index(sz) */ sum(mennyiseg) from nikovits.szallit sz
+where szkod = 2 and ckod = 1;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.3a','all'));
+
+-- b
+
+explain plan set statement_id='8.3b' for
+select /*+ USE_CONCAT */ sum(mennyiseg) from nikovits.szallit sz
+where szkod = 2 and ckod = 1;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.3b','all'));
+
+
+-- 5
+
+create table cikk as select * from nikovits.cikk;
+
+create bitmap index cikk_szin_bmap on cikk(szin);
+create bitmap index cikk_suly_bmap on cikk(suly);
+
+explain plan set statement_id='8.5' for
+select /*+ index(cikk cikk_szin_bmap cikk_suly_bmap) */ * from cikk
+where szin = 'piros' and suly > 10;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.5','all'));
+
+
+-- 4
+
+explain plan set statement_id='8.4.1' for
+select /*+ full(c) */ sum(suly) from nikovits.cikk c
+where szin = 'piros' and suly > 10;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.1','all'));
+
+
+explain plan set statement_id='8.4.2' for
+select /*+ index(c c_ckod) */ sum(suly) from nikovits.cikk c
+where ckod = 10;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.2','all'));
+
+
+
+explain plan set statement_id='8.4.3' for
+select /*+ full(p) full(sz) use_hash(p sz) */ count(*)
+from nikovits.projekt p join nikovits.szallit sz on p.pkod = sz.pkod;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.3','all'));
+
+
+
+explain plan set statement_id='8.4.4' for
+select /*+ full(p) full(sz) use_hash(p sz) */ count(*)
+from nikovits.projekt p join nikovits.szallit sz on p.pkod = sz.pkod
+group by pnev;
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.4','all'));
+
+
+
+explain plan set statement_id='8.4.5' for
+select /*+ index(c c_szin) full(sz) use_merge(c sz) ordered */ count(*)
+from nikovits.cikk c join nikovits.szallit sz on c.ckod = sz.ckod
+where szin = 'piros';
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.5','all'));
+
+
+explain plan set statement_id='8.4.sj_pelda' for
+SELECT  ename FROM nikovits.emp WHERE deptno IN
+   (SELECT /*+ nl_sj */ deptno FROM nikovits.dept WHERE loc='DALLAS');
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.sj_pelda','all'));
+
+
+explain plan set statement_id='8.4.no_unnest' for
+SELECT ename FROM nikovits.emp WHERE NOT EXISTS
+   (SELECT /*+ no_unnest */ * FROM nikovits.dept WHERE emp.deptno=dept.deptno AND loc='DALLAS'); 
+
+select plan_table_output from table(dbms_xplan.display('plan_table','8.4.no_unnest','all'));
+
+
+

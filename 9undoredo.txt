@@ -1,0 +1,22 @@
+8.4.3 Feladat (könyv 489. old.)
+A következő undo/redo naplóbejegyzés-sorozat a T és U két tranzakcióra vonatkozik:
+<start, T> 
+<T, A, 10, 11> 
+<start, U> 
+<U, B, 20, 21> 
+<T, C, 30, 31> 
+<U, D, 40, 41>
+<COMMIT, U>
+<T, E, 50, 51> 
+<COMMIT, T>
+<END, U>
+<END, T>
+Adjuk meg a helyreállítás-kezelő tevékenységeit, ha az utolsó lemezre került naplóbejegyzés:
+a) <start U>: WRITE(A, 10) OUTPUT(A) <ABORT, T> <ABORT, U> FLUSH LOG
+b) <COMMIT U>: WRITE(C, 30) OUTPUT(C) WRITE(A, 10) OUTPUT(A) <ABORT, T> FLUSH LOG
+		WRITE(B, 21) OUTPUT(B) WRITE(D, 41) OUTPUT(D) <END, U> FLUSH LOG
+c) <T, E, 50, 51>: WRITE(E, 50) OUTPUT(E) WRITE(C, 30) OUTPUT(C) WRITE(A, 10) OUTPUT(A) <ABORT, T> FLUSH LOG
+		WRITE(B, 21) OUTPUT(B) WRITE(D, 41) OUTPUT(D) <END, U> FLUSH LOG
+d) <COMMIT, T>: WRITE(A, 11) OUTPUT(A) WRITE(B, 21) OUTPUT(B) WRITE(C, 31) OUTPUT(C) WRITE(D, 41) OUTPUT(D)
+		WRITE(E, 51) OUTPUT(E) <END, U> <END, T> FLUSH LOG
+e) <END, U>: WRITE(A, 11) OUTPUT(A) WRITE(C, 31) OUTPUT(C) WRITE(E, 51) OUTPUT(E) <END, T> FLUSH LOG

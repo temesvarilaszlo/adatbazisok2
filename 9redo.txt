@@ -1,0 +1,21 @@
+8.3.3 Feladat (könyv 483. old.)
+Ismételjük meg a 8.2.4 feladatot helyreállítási (REDO) típusú naplózást használva.
+<start, T> 
+<T, A, 10> 
+<start, U> 
+<U, B, 20> 
+<T, C, 30> 
+<U, D, 40>
+<T, A, 11>
+<U, B, 21>  
+<COMMIT, U>
+<T, E, 50> 
+<COMMIT, T>
+<END, U>
+<END, T>
+Adjuk meg a helyreállítás-kezelő tevékenységeit, ha az utolsó lemezre került naplóbejegyzés:
+a) <START, U>: -
+b) <C0MMIT, U>: WRITE(B, 20) OUTPUT(B) WRITE(D, 40) OUTPUT(D) WRITE(B, 21) OUTPUT(B) <END, U> FLUSH LOG
+c) <T, E, 50>: WRITE(B, 20) OUTPUT(B) WRITE(D, 40) OUTPUT(D) WRITE(B, 21) OUTPUT(B) <END, U> FLUSH LOG
+d) <C0MMIT, T>: WRITE(A, 10) OUTPUT(A) WRITE(B, 20) OUTPUT(B) WRITE(C, 30) OUTPUT(C) WRITE(D, 40) OUTPUT(D) WRITE(A, 11) OUTPUT(A) WRITE(B, 21) OUTPUT(B) WRITE(E, 50) OUTPUT(E) <END, U> <END, T> FLUSH LOG
+e) <END, U>: WRITE(A, 10) OUTPUT(A) WRITE(C, 30) OUTPUT(C) WRITE(A, 11) OUTPUT(A) WRITE(E, 50) OUTPUT(E) <END, T> FLUSH LOG
